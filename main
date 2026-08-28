@@ -1,63 +1,101 @@
+-- Skidware Script for Voxels (X-Ray & ESP Ores)
 local CoreGui = game:GetService("CoreGui")
 local Workspace = game:GetService("Workspace")
 
-if CoreGui:FindFirstChild("Voxels_XRay_V2") then
-    CoreGui.Voxels_XRay_V2:Destroy()
+if CoreGui:FindFirstChild("Skidware_Voxels") then
+    CoreGui.Skidware_Voxels:Destroy()
 end
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "Voxels_XRay_V2"
+ScreenGui.Name = "Skidware_Voxels"
 ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 
-local ToggleButton = Instance.new("TextButton")
-ToggleButton.Parent = ScreenGui
-ToggleButton.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-ToggleButton.Position = UDim2.new(0, 50, 0, 150)
-ToggleButton.Size = UDim2.new(0, 160, 0, 45)
-ToggleButton.Font = Enum.Font.GothamBold
-ToggleButton.Text = "🔮 X-Ray Voxel [OFF]"
-ToggleButton.TextColor3 = Color3.fromRGB(255, 50, 50)
-ToggleButton.TextSize = 14
-ToggleButton.Draggable = true
+-- Tạo khung Menu bên phải giống ảnh mẫu
+local MainFrame = Instance.new("Frame")
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+MainFrame.Position = UDim2.new(1, -210, 0, 50)
+MainFrame.Size = UDim2.new(0, 200, 0, 160)
+MainFrame.Draggable = true
 
 local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 8)
-UICorner.Parent = ToggleButton
+UICorner.CornerRadius = UDim.new(0, 6)
+UICorner.Parent = MainFrame
 
-local IsActive = false
-local StoredParts = {}
+local Title = Instance.new("TextLabel")
+Title.Parent = MainFrame
+Title.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Font = Enum.Font.GothamBold
+Title.Text = "SKIDWARE"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 14
 
-ToggleButton.MouseButton1Click:Connect(function()
-    IsActive = not IsActive
-    
-    if IsActive then
-        ToggleButton.Text = "🔮 X-Ray Voxel [ON]"
-        ToggleButton.TextColor3 = Color3.fromRGB(50, 255, 50)
-        
-        -- Quét toàn bộ workspace tìm khối block môi trường
-        for _, obj in ipairs(Workspace:GetDescendants()) do
-            if obj:IsA("BasePart") then
-                local name = obj.Name:lower()
-                -- Ẩn bớt các khối đất, đá thông thường để lộ không gian bên trong
-                if name:find("dirt") or name:find("stone") or name:find("rock") or name:find("block") then
-                    if obj.Transparency < 0.8 then
-                        StoredParts[obj] = obj.Transparency
-                        obj.Transparency = 0.85
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 6)
+TitleCorner.Parent = Title
+
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Parent = MainFrame
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+ToggleBtn.Position = UDim2.new(0, 10, 0, 45)
+ToggleBtn.Size = UDim2.new(0, 180, 0, 35)
+ToggleBtn.Font = Enum.Font.GothamBold
+ToggleBtn.Text = "XRAY: OFF"
+ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleBtn.TextSize = 13
+
+local BtnCorner = Instance.new("UICorner")
+BtnCorner.CornerRadius = Instance.new("UICorner") and UDim.new(0, 4)
+BtnCorner.Parent = ToggleBtn
+
+local XRayActive = false
+local HighlightFolder = Instance.new("Folder")
+HighlightFolder.Name = "XRayHighlights"
+HighlightFolder.Parent = Workspace
+
+-- Hàm quét và tạo hiệu ứng nhìn xuyên thấu quặng
+local function ScanOres()
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("BasePart") then
+            local name = obj.Name:lower()
+            -- Lọc các khối quặng giá trị trong map Voxels
+            if name:find("diamond") or name:find("gold") or name:find("iron") or name:find("coal") or name:find("emerald") then
+                if not HighlightFolder:FindFirstChild(obj.GetFullName()) then
+                    local highlight = Instance.new("Highlight")
+                    highlight.Name = obj.GetFullName()
+                    highlight.Adornee = obj
+                    highlight.Parent = HighlightFolder
+                    
+                    -- Đổi màu theo loại quặng
+                    if name:find("diamond") then
+                        highlight.FillColor = Color3.fromRGB(0, 255, 255) -- Cyan cho kim cương
+                    elseif name:find("gold") then
+                        highlight.FillColor = Color3.fromRGB(255, 255, 0)   -- Vàng cho gold
+                    elseif name:find("iron") then
+                        highlight.FillColor = Color3.fromRGB(200, 200, 200) -- Xám cho sắt
+                    else
+                        highlight.FillColor = Color3.fromRGB(0, 255, 0)     -- Xanh lá mặc định
                     end
+                    
+                    highlight.FillTransparency = 0.3
+                    highlight.OutlineTransparency = 1
                 end
             end
         end
+    end
+end
+
+ToggleBtn.MouseButton1Click:Connect(function()
+    XRayActive = not XRayActive
+    if XRayActive then
+        ToggleBtn.Text = "XRAY: ON"
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
+        ScanOres()
     else
-        ToggleButton.Text = "🔮 X-Ray Voxel [OFF]"
-        ToggleButton.TextColor3 = Color3.fromRGB(255, 50, 50)
-        
-        -- Khôi phục lại trạng thái ban đầu
-        for obj, trans in pairs(StoredParts) do
-            if obj and obj.Parent then
-                obj.Transparency = trans
-            end
-        end
-        StoredParts = {}
+        ToggleBtn.Text = "XRAY: OFF"
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+        HighlightFolder:ClearAllChildren()
     end
 end)
