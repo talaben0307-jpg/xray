@@ -1,0 +1,69 @@
+local CoreGui = game:GetService("CoreGui")
+local RunService = game:GetService("RunService")
+
+-- Xóa giao diện cũ nếu đã tồn tại
+if CoreGui:FindFirstChild("Voxels_XRayUI") then
+    CoreGui.Voxels_XRayUI:Destroy()
+end
+
+-- Tạo nút bấm bật/tắt X-Ray trên màn hình
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "Voxels_XRayUI"
+ScreenGui.Parent = CoreGui
+ScreenGui.ResetOnSpawn = false
+
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Parent = ScreenGui
+ToggleButton.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+ToggleButton.Position = UDim2.new(0, 50, 0, 150)
+ToggleButton.Size = UDim2.new(0, 150, 0, 45)
+ToggleButton.Font = Enum.Font.GothamBold
+ToggleButton.Text = "🔮 X-Ray [OFF]"
+ToggleButton.TextColor3 = Color3.fromRGB(255, 50, 50)
+ToggleButton.TextSize = 14
+ToggleButton.Draggable = true
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.Parent = ToggleButton
+
+local XRayEnabled = false
+local ModifiedParts = {}
+
+-- Hàm bật/tắt X-Ray
+local function ToggleXRay(state)
+    XRayEnabled = state
+    
+    if XRayEnabled then
+        ToggleButton.Text = "🔮 X-Ray [ON]"
+        ToggleButton.TextColor3 = Color3.fromRGB(50, 255, 50)
+        
+        -- Quét và làm trong suốt các khối block phổ biến (như đất, đá) để dễ nhìn quặng
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("BasePart") and not obj.Anchored and obj.Transparency < 0.5 then
+                -- Bạn có thể tùy chỉnh tên block muốn ẩn đi ở đây
+                local name = obj.Name:lower()
+                if name:find("dirt") or name:find("stone") or name:find("rock") then
+                    ModifiedParts[obj] = obj.Transparency
+                    obj.Transparency = 0.85 -- Độ mờ của khối (0 là đặc, 1 là biến mất hoàn toàn)
+                end
+            end
+        end
+    else
+        ToggleButton.Text = "🔮 X-Ray [OFF]"
+        ToggleButton.TextColor3 = Color3.fromRGB(255, 50, 50)
+        
+        -- Khôi phục trạng thái ban đầu của các block
+        for obj, originalTransparency in pairs(ModifiedParts) do
+            if obj and obj.Parent then
+                obj.Transparency = originalTransparency
+            end
+        end
+        ModifiedParts = {}
+    end
+end
+
+-- Xử lý sự kiện bấm nút
+ToggleButton.MouseButton1Click:Connect(function()
+    ToggleXRay(not XRayEnabled)
+end)
