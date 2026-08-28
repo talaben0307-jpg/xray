@@ -1,14 +1,12 @@
 local CoreGui = game:GetService("CoreGui")
-local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
--- Xóa giao diện cũ nếu đã tồn tại
-if CoreGui:FindFirstChild("Voxels_XRayUI") then
-    CoreGui.Voxels_XRayUI:Destroy()
+if CoreGui:FindFirstChild("Voxels_XRay_V2") then
+    CoreGui.Voxels_XRay_V2:Destroy()
 end
 
--- Tạo nút bấm bật/tắt X-Ray trên màn hình
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "Voxels_XRayUI"
+ScreenGui.Name = "Voxels_XRay_V2"
 ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 
@@ -16,9 +14,9 @@ local ToggleButton = Instance.new("TextButton")
 ToggleButton.Parent = ScreenGui
 ToggleButton.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
 ToggleButton.Position = UDim2.new(0, 50, 0, 150)
-ToggleButton.Size = UDim2.new(0, 150, 0, 45)
+ToggleButton.Size = UDim2.new(0, 160, 0, 45)
 ToggleButton.Font = Enum.Font.GothamBold
-ToggleButton.Text = "🔮 X-Ray [OFF]"
+ToggleButton.Text = "🔮 X-Ray Voxel [OFF]"
 ToggleButton.TextColor3 = Color3.fromRGB(255, 50, 50)
 ToggleButton.TextSize = 14
 ToggleButton.Draggable = true
@@ -27,43 +25,39 @@ local UICorner = Instance.new("UICorner")
 UICorner.CornerRadius = UDim.new(0, 8)
 UICorner.Parent = ToggleButton
 
-local XRayEnabled = false
-local ModifiedParts = {}
+local IsActive = false
+local StoredParts = {}
 
--- Hàm bật/tắt X-Ray
-local function ToggleXRay(state)
-    XRayEnabled = state
+ToggleButton.MouseButton1Click:Connect(function()
+    IsActive = not IsActive
     
-    if XRayEnabled then
-        ToggleButton.Text = "🔮 X-Ray [ON]"
+    if IsActive then
+        ToggleButton.Text = "🔮 X-Ray Voxel [ON]"
         ToggleButton.TextColor3 = Color3.fromRGB(50, 255, 50)
         
-        -- Quét và làm trong suốt các khối block phổ biến (như đất, đá) để dễ nhìn quặng
-        for _, obj in ipairs(workspace:GetDescendants()) do
-            if obj:IsA("BasePart") and not obj.Anchored and obj.Transparency < 0.5 then
-                -- Bạn có thể tùy chỉnh tên block muốn ẩn đi ở đây
+        -- Quét toàn bộ workspace tìm khối block môi trường
+        for _, obj in ipairs(Workspace:GetDescendants()) do
+            if obj:IsA("BasePart") then
                 local name = obj.Name:lower()
-                if name:find("dirt") or name:find("stone") or name:find("rock") then
-                    ModifiedParts[obj] = obj.Transparency
-                    obj.Transparency = 0.85 -- Độ mờ của khối (0 là đặc, 1 là biến mất hoàn toàn)
+                -- Ẩn bớt các khối đất, đá thông thường để lộ không gian bên trong
+                if name:find("dirt") or name:find("stone") or name:find("rock") or name:find("block") then
+                    if obj.Transparency < 0.8 then
+                        StoredParts[obj] = obj.Transparency
+                        obj.Transparency = 0.85
+                    end
                 end
             end
         end
     else
-        ToggleButton.Text = "🔮 X-Ray [OFF]"
+        ToggleButton.Text = "🔮 X-Ray Voxel [OFF]"
         ToggleButton.TextColor3 = Color3.fromRGB(255, 50, 50)
         
-        -- Khôi phục trạng thái ban đầu của các block
-        for obj, originalTransparency in pairs(ModifiedParts) do
+        -- Khôi phục lại trạng thái ban đầu
+        for obj, trans in pairs(StoredParts) do
             if obj and obj.Parent then
-                obj.Transparency = originalTransparency
+                obj.Transparency = trans
             end
         end
-        ModifiedParts = {}
+        StoredParts = {}
     end
-end
-
--- Xử lý sự kiện bấm nút
-ToggleButton.MouseButton1Click:Connect(function()
-    ToggleXRay(not XRayEnabled)
 end)
